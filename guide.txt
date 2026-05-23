@@ -1,0 +1,9 @@
+1. news extraction, image generation.
+2. image to video and music
+3. uploaded to social media platform
+
+
+new news -> title sended to ai for image generation -> video + music -> uploaded to platfroms
+
+
+
