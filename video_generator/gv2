@@ -1,0 +1,52 @@
+import sys
+import os
+import subprocess
+import time
+
+
+
+time_now = str(int(time.time()))
+
+music_path = "bg_music.mp3"
+output_dir = "/home/aaki/TRAPPIST-1E/video_generator" + "/videos"
+output_path = os.path.join(output_dir, str(time_now) + ".mp4")
+
+# Ensure output directory exists
+os.makedirs(output_dir, exist_ok=True)
+
+# FFmpeg command: crop bottom 100px, scale to 1080x1920, loop image for 10s with music
+
+"""
+ f'ffmpeg -loop 1 -i "{image_path}" -i "{music_path}" '
+
+"""
+
+def generate_video(image_path):
+    ffmpeg_cmd = (
+    f'ffmpeg -y '
+    f'-loop 1 -i "{image_path}" '
+    f'-f lavfi -i "anullsrc=channel_layout=stereo:sample_rate=44100" '
+    f'-t 10 '
+    f'-vf "'
+    f'scale=1080:1920:force_original_aspect_ratio=increase,'
+    f'crop=1080:1920,'
+    f'setsar=1,setdar=9/16,'
+    f'fps=30'
+    f'" '
+    f'-c:v libx264 -preset slow -crf 18 '
+    f'-pix_fmt yuv420p '
+    f'-movflags +faststart '
+    f'-c:a aac -b:a 128k -shortest '
+    f'"{output_path}"'
+)
+
+
+
+    print("[DEBUG] video generated using image:", image_path)
+
+    subprocess.run(ffmpeg_cmd, shell=True, check=True)
+    return output_path
+
+
+
+
