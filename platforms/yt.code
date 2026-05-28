@@ -1,0 +1,56 @@
+import os
+from google_auth_oauthlib.flow import InstalledAppFlow
+from googleapiclient.discovery import build
+from googleapiclient.http import MediaFileUpload
+from google.oauth2.credentials import Credentials
+
+# --- CONFIG ---
+SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+CLIENT_SECRETS_FILE = "/home/aaki/TRAPPIST-1E/platforms/client_secrets.json"
+TOKEN_FILE = "/home/aaki/TRAPPIST-1E/platforms/token.json"
+
+# --- AUTHENTICATION ---
+def get_authenticated_service():
+    creds = None
+    # Load existing credentials if available
+    if os.path.exists(TOKEN_FILE):
+        creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
+    # If no valid credentials, run headless OAuth flow
+    if not creds or not creds.valid:
+        flow = InstalledAppFlow.from_client_secrets_file(CLIENT_SECRETS_FILE, SCOPES)
+        # Headless: open_browser=False prints URL in terminal
+        creds = flow.run_local_server(port=56789, open_browser=False)
+        # Save credentials for future runs
+        with open(TOKEN_FILE, 'w') as token:
+            token.write(creds.to_json())
+        print("Authorization complete. Credentials saved to token.json.")
+    return build("youtube", "v3", credentials=creds)
+
+# --- UPLOAD VIDEO ---
+def upload_video(video_path: str,
+                 title: str,
+                 description: str = "",
+                 tags: list = None,
+                 category_id: str = "25",  # News & Politics
+                 privacy_status: str = "public"):  # Default private
+    if tags is None:
+        tags = []
+    youtube = get_authenticated_service()
+    request = youtube.videos().insert(
+        part="snippet,status",
+        body={
+            "snippet": {
+                "title": title,
+                "description": description,
+                "tags": tags,
+                "categoryId": category_id
+            },
+            "status": {
+                "privacyStatus": privacy_status
+            }
+        },
+        media_body=MediaFileUpload(video_path)
+    )
+    response = request.execute()
+    print("Uploaded Video ID:", response["id"])
+    return response["id"]
